@@ -35,6 +35,7 @@ class DatasetMetaQA_all_hops(Dataset):
         return head_id, tail_onehot, torch.tensor(path)
 
 class CheckpointLoader():
+    ''' Load graph embeddings, relation, and entities index '''
     def __init__(self,embedding_path):
         self.embedding_path = embedding_path
 
@@ -55,6 +56,7 @@ class CheckpointLoader():
 
 
     def extract_embeddings(self,embedder, inst_dict, bias=False):
+        'Extract entity embeddings and entity to index mappings'
         if hasattr(embedder, 'base_embedder'):
             embedder = embedder.base_embedder
 
@@ -64,7 +66,6 @@ class CheckpointLoader():
         bh = []
         bt = []
         idx = 0
-
         with open(inst_dict, 'r') as f:
             for line in f.readlines():
                 line = line[:-1].split('\t')
@@ -85,6 +86,8 @@ class CheckpointLoader():
         return inst2idx, idx2inst, embedding_matrix, bh, bt
 
     def extract_rel_embeddings(self,embedder, inst_dict, bias=False):
+        'Extract relation embeddings and relation to index mappings'
+
         if hasattr(embedder, 'base_embedder'):
             embedder = embedder.base_embedder
 
@@ -103,7 +106,7 @@ class CheckpointLoader():
                 inst2idx[inst_name] = idx
                 idx2inst[idx] = inst_name
                 idx += 1
-        ### add reverse relation before extracting embeddings
+        ### add reverse relation (add '_inv' to relations) before extracting embeddings
         def add_inv_rel(rel2idx):
             keyz = list(rel2idx.keys())
             for r in range(len(rel2idx)):

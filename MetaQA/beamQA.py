@@ -1,6 +1,20 @@
 import torch
 
 def check(head, rel,model,rel2idx,entity2idx,idx2entity,nx_graph,device,topk = 50 ,retscore = False):
+    '''
+    Computes the scores between head entity and relation
+    :param head: head entity
+    :param rel: relation
+    :param model: QA model
+    :param rel2idx: relation to index mapping
+    :param entity2idx: entity to index mapping
+    :param idx2entity: index to entity mapping
+    :param nx_graph: KG
+    :param device:
+    :param topk: number of k elements to keep
+    :param retscore: return score
+    :return: sorted list of topk candidates and scores
+    '''
     if head not in entity2idx or rel not in rel2idx:
         return [(None, None)]
     s_id = entity2idx[head]
@@ -8,11 +22,12 @@ def check(head, rel,model,rel2idx,entity2idx,idx2entity,nx_graph,device,topk = 5
     s = torch.Tensor([s_id]).long().to(device)            # subject indexes
     p = torch.Tensor([rel_id]).long().to(device)          # relation indexes
     scores = model.another_forward(s, p)        # scores of all objects for (s,p,?)
-    # scores = torch.softmax(scores ,dim=1)
+    scores = torch.softmax(scores ,dim=1)
+    # edgeidx contains a list of candidates indexes that have an edge with the head entity
     edgeidx = torch.tensor([entity2idx[i[1]]
                             for i in nx_graph.out_edges(head, data='data')
                             if i[2] == rel and i[1] in entity2idx]).long().to(device)
-
+    ### set score of entities that have an edge with the head entity to 1
     scores.index_fill_(1, edgeidx, 1)
     scores.index_fill_(1, s, 0)
     sc, o = torch.topk(scores, topk, largest=True, dim=-1)  # index of highest-scoring objects
@@ -35,23 +50,30 @@ def check_rec(prev_return, rel,head,topK,model,entity2idx,idx2entity,rel2idx,nx_
     return sorted(entity_score, key= lambda x: x[1], reverse=True)[:topK]
 
 
-def path_finder_rec(headname, chains,scorez,model,entity2idx,idx2entity,rel2idx,nx_graph,device):
+def path_finder_rec(headname, chains,scorez,model,entity2idx,idx2entity,rel2idx,nx_graph,device,topk=10):
+    '''
+    :param headname: Head entity
+    :param chains: list of paths
+    :param scorez: list of scores
+    :param model: QA model
+    :param entity2idx: entity to index mapping
+    :param idx2entity: index to entity mapping
+    :param rel2idx: relation to index mapping
+    :param nx_graph: Knowledge graph
+    :param device:
+    :return: the top predicted entity , score
+    '''
     max_score = 0
     predicted_entity = ''
     predicted_path = ''
-    topK = 10
-    idx = 0
-    tops = []
     for path,pscore in zip(chains,scorez):
         path = path.split()
         prev_return = [(headname, 1)]
         for j , path_i in enumerate(path):
-            prev_return = check_rec(prev_return, path_i, headname, topK, model, entity2idx, idx2entity,
+            prev_return = check_rec(prev_return, path_i, headname, topk, model, entity2idx, idx2entity,
                                     rel2idx, nx_graph, device)
             entity, score = prev_return[0]
         if entity and score * pscore > max_score:
             predicted_entity = entity
             max_score = score * pscore
-            tops = prev_return
-        idx += 1
-    return predicted_entity, max_score ,tops
+    return predicted_entity, max_score

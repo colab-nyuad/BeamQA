@@ -20,31 +20,32 @@ parser.add_argument('--do_dropout', type=bool, default=True)
 parser.add_argument('--decay', type=float, default=1.0)
 parser.add_argument('--shuffle_data', type=bool, default=True)
 parser.add_argument('--num_workers', type=int, default=15)
-parser.add_argument('--lr', type=float, default=0.0001)
-parser.add_argument('--nb_epochs', type=int, default=90)
+parser.add_argument('--lr', type=float, default=0.005)
+# parser.add_argument('--nb_epochs', type=int, default=90)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--embedding_dim', type=int, default=400)
+parser.add_argument('--topk', type=int, default=10)
+
 args = parser.parse_args()
 
 device = 'cuda:'+str(args.gpu)
-# kg_model_path = 'Data/graph_data/MetaQA'+args.kg_type
-kg_model_path = '/storage/kge/data/MetaQA_'+args.kg_type +'/'
-
+kg_model_path = '../Data/Graph_data/MetaQA/MetaQA_'+args.kg_type+'/'
 kg_model_name = 'checkpoint_best.pt'
+nx_graph_path ='../Data/Graph_data/MetaQA/MetaQA-'+args.kg_type+'.gpickle'
+
 embedding_matrices , entity2idx, rel2idx , idx2rel = get_embeddings(kg_model_path,kg_model_name)
 model = Model(embedding_matrices,args.dropout,args.do_batchnorm,args.do_dropout).to(device)
 
-train_data_path = '/storage/Embedkg/data/QA_data/MetaQA/train_'+str(args.hops)+'hop.txt'
-# test_data_path = 'Data/QA_data/MetaQA/test_'+str(args.hops)+'hops.txt'
-beams_path ='Data/Beam_data/prediction_w_scores_metaqa'+str(args.hops)+'hops.txt'
-
+train_data_path = '../Data/QA_data/MetaQA/train_'+str(args.hops)+'hop.txt'
+beams_path ='../Data/Path_gen/outputs/prediction_w_scores_metaqa'+str(args.hops)+'hops.txt'
 test_data_path = '/storage/Embedkg/data/QA_data/MetaQA/test_'+str(args.hops)+'hop.txt'
+nx_graph = '../Data/Graph_data/MetaQA/MetaQA-'+ args.kg_type +'.gpickle'
 
 if args.mode == 'BeamQA':
     test_score = evaluate_beamQA(model=model, data_path=test_data_path,
-                              entity2idx=entity2idx, rel2idx=rel2idx,
-                              device=device, hops=args.hops, kg_type=args.kg_type)
-#
+                                 entity2idx=entity2idx, rel2idx=rel2idx,
+                                 device=device, hops=args.hops, nx_graph_path=nx_graph, topk=args.topk)
+
 elif args.mode =='train-BeamQA':
     train_data = process_text_file(train_data_path)
     dataset1 = DatasetMetaQA_all_hops(data=train_data,  entity2idx=entity2idx,rel2idx=rel2idx)
@@ -62,6 +63,6 @@ elif args.mode =='train-BeamQA':
 
     test_score = evaluate_beamQA(model=model, data_path=test_data_path,
                               entity2idx=entity2idx, rel2idx=rel2idx,
-                              device=device, hops=args.hops, kg_type=args.kg_type)
-#
+                              device=device, hops=args.hops, nx_graph_path=nx_graph,topk=args.topk)
+
 else: print('The mode entered is wrong')

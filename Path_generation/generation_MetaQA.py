@@ -34,6 +34,11 @@ args = parser.parse_args()
 
 
 def preprocess_function(examples):
+    """
+     Preprocess samples tokenizes inputs and targets
+    :param examples:
+    :return: tokenized inputs and targets
+    """
     inputs = [doc for doc in examples["text"]]
     model_inputs = tokenizer(inputs, max_length=1024, truncation=True)
     with tokenizer.as_target_tokenizer():
@@ -54,12 +59,14 @@ if args.mode == 'train_eval':
     print(len(prop_set), len(train))
 
     qa, rel = preprocess_data(train)
+    # create a new dataframe with processed input and target fields for both train and test
     train = pd.DataFrame({'text': qa, 'tag': rel})
     train.to_csv('../Data/Path_gen/train_bart_metaqa_'+args.hop+'hop.csv')
     qa, rel = preprocess_data(test)
     test = pd.DataFrame({'text': qa, 'tag': rel})
     test.to_csv('../Data/Path_gen/test_bart_metaqa_'+args.hop+'hop.csv')
 
+    ### Specify input and target files
     data_files = {"train": "../Data/Path_gen/train_bart_metaqa_"+args.hop+"hop.csv", "test": "../Data/Path_gen/test_bart_metaqa_"+args.hop+"hop.csv"}
     train_loader = load_dataset("csv", data_files=data_files, names=['text', 'tag'], header=0, index_col=0)
     tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
@@ -68,6 +75,7 @@ if args.mode == 'train_eval':
     tokenizer.add_tokens([i for i in prop_set])
     print('tokenizer after adding relations as tokens ',len(tokenizer))
 
+    # Tokenize input and target
     tokenized_datasets = train_loader.map(preprocess_function, batched=True)
     model = BartForConditionalGeneration.from_pretrained(args.model)
     model.resize_token_embeddings(len(tokenizer))
@@ -97,9 +105,12 @@ if args.mode == 'train_eval':
     )
     trainer.train()
     data_test = test
+    # count the samples with nan targets to exclude them when computing the hits@1 and hits@3
+    to_exclude = len(data_test[data_test['tag'].isnull()])
+    # replace samples that don't have a path with unknown
     data_test.loc[data_test['tag'].isnull(), 'tag'] = 'unknown'
     data_test['text'] = data_test['text'].apply(lambda w: preprocess_sentence(w))
-    run_evaluation(model, data_test,tokenizer)
+    paths , scores, hop_scores = run_evaluation(model, data_test,tokenizer,to_exclude,args.hops)
 
 if args.mode =='eval':
     train = pd.read_csv('/storage/Embedkg/data/QA_data/MetaQA/train_' + args.hop + 'hop.txt', header=0,
@@ -112,9 +123,10 @@ if args.mode =='eval':
     model.resize_token_embeddings(len(tokenizer))
 
     data_test = pd.read_csv('../Data/Path_gen/test_bart_metaqa_'+args.hop+'hop.csv')
+    to_exclude = len(data_test[data_test['tag'].isnull()])
     data_test.loc[data_test['tag'].isnull(), 'tag'] = 'unknown'
     data_test['text'] = data_test['text'].apply(lambda w: preprocess_sentence(w))
-    run_evaluation(model, data_test,tokenizer)
+    paths , scores, hop_scores = run_evaluation(model, data_test,tokenizer,to_exclude,args.hops)
 
 
 

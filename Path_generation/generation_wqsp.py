@@ -56,9 +56,10 @@ if args.mode == 'train_eval':
     print('tokenizer before ',len(tokenizer))
     tokenizer.add_tokens(prop_set)
     print('tokenizer after adding relations as tokens ',len(tokenizer))
-
+    # Tokenize input and target
     tokenized_datasets = train_loader.map(preprocess_function, batched=True)
     model = BartForConditionalGeneration.from_pretrained(args.model)
+    ### Freeze the encoder of BART
     freeze_params(model.get_encoder())  ## freeze the encoder
     model.resize_token_embeddings(len(tokenizer))
     data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model)
@@ -90,6 +91,7 @@ if args.mode == 'train_eval':
 
     data_test = pd.read_csv('/storage/nlp_chainpred/Bart/test_gt.txt', names=['text', 'no', 'tag'],
                             delimiter='\t')
+    ## count the samples with nan targets to exclude them when computing the hits@1 and hits@3
     to_exclude = len(data_test[data_test['tag'].isnull()])
     data_test.loc[data_test['tag'].isnull(), 'tag'] = 'unknown'
     data_test['text'] = data_test['text'].apply(lambda w: preprocess_sentence(w))
@@ -100,20 +102,18 @@ if args.mode == 'train_eval':
     data_test["tag"] = data_test.tag.apply(lambda w: w.split(' '))
     print('LEN TEST ', len(data_test))
     data_test["tag"] = data_test.tag.apply(lambda w: ' '.join(w))
-
-    run_evaluation(model, data_test,tokenizer)
-
+    run_evaluation(model, data_test,tokenizer,to_exclude,args.hops)
 if args.mode =='eval':
-
 
     model = BartForConditionalGeneration.from_pretrained(args.model)
     tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
     model.resize_token_embeddings(len(tokenizer))
 
     data_test = pd.read_csv('../Data/Path_gen/test_bart_metaqa_'+args.hop+'hop.csv')
+    to_exclude = len(data_test[data_test['tag'].isnull()])
     data_test.loc[data_test['tag'].isnull(), 'tag'] = 'unknown'
     data_test['text'] = data_test['text'].apply(lambda w: preprocess_sentence(w))
-    run_evaluation(model, data_test,tokenizer)
+    paths , scores, hop_scores = run_evaluation(model, data_test,tokenizer,to_exclude,args.hops)
 
 
 

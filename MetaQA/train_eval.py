@@ -25,19 +25,16 @@ def data_generator(data, entity2idx, rel2idx,hops):
         yield torch.tensor(head, dtype=torch.long), ans,path , beam_paths,scores
 
 
-def evaluate_beamQA(data_path, device, model, entity2idx, rel2idx,hops,kg_type):
+def evaluate_beamQA(data_path, device, model, entity2idx, rel2idx,hops,nx_graph_path,topk):
     model.eval()
     data = process_text_file(data_path)
     data_gen = data_generator(data=data, entity2idx=entity2idx, rel2idx=rel2idx,hops=hops)
     total_correct = 0
-
     idx2entity = {v:k for k,v in entity2idx.items()}
     num_hops = int(hops.split('hop')[0])
     print('Hops ',num_hops)
-    if kg_type == 'full':
-        nx_graph = load_graph('/storage/archive/graphs/MetaQA-full.gpickle')
-    else :
-        nx_graph = load_graph('/storage/archive/graphs/MetaQA-half.gpickle')
+    # load the graph
+    nx_graph = load_graph(nx_graph_path)
 
     loader = tqdm(range(len(data)))
     with torch.no_grad():
@@ -49,10 +46,7 @@ def evaluate_beamQA(data_path, device, model, entity2idx, rel2idx,hops,kg_type):
             predicted_chains = d[3]
             h = idx2entity[head.item()]
             predicted_chains = [h for h in predicted_chains if len(h.split(' ')) == num_hops]
-            enc_quest = ''
-            predicted_entity, max_score, tops = path_finder_rec(h, predicted_chains, scorez, model,
-                                                                entity2idx, idx2entity, rel2idx, nx_graph, device)
-
+            predicted_entity, max_score = path_finder_rec(h, predicted_chains, scorez, model, entity2idx, idx2entity, rel2idx, nx_graph,topk=topk, device=device)
             if predicted_entity :
                 if entity2idx[predicted_entity] in ans:
                     total_correct += 1
@@ -74,7 +68,7 @@ def train(model,data_loader,loss_func,loss_weights,optimizer,scheduler,batch_siz
         relations = a[2].to(device)
         pred1, pred2 = model(positive_head, relations)
         a,b = loss_weights[0],loss_weights[1]
-        loss = loss_func(pred1, target) + loss_func(pred2, target)
+        loss = a * loss_func(pred1, target) + b * loss_func(pred2, target)
         # if i_batch == 0: print(loss_func(pred1, target), loss_func(pred2, target))
         loss.backward()
         optimizer.step()

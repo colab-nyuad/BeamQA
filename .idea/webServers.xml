@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="18395131-6879-458e-a0f0-fad5b6d9d991" name="bimqa">
+        <fileTransfer accessType="SFTP" host="colab.nb" port="22" sshConfigId="348c99d9-46aa-4bfd-aa4e-980d38c40323" sshConfig="sshConfig://ubuntu@colab.nb:22 agent/home/ubuntu/miniconda3/bin/python" authAgent="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

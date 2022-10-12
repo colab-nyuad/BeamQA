@@ -3,6 +3,13 @@ from loaders import  CheckpointLoader
 import networkx as nx
 
 def get_embeddings(path,model_name,embedding_dim):
+    '''
+
+    :param path:
+    :param model_name:
+    :param embedding_dim:
+    :return:
+    '''
     ckp = CheckpointLoader(path)
     entity2idx, rel2idx, embedding_matrix, embedding_matrix_rel = ckp.load_libkge_checkpoint(model_name,embedding_dim)
     embedding_matrix_rel.append(torch.zeros(embedding_matrix_rel[0].shape[0]))  ### this is a padding embedding
