@@ -41,16 +41,25 @@ def preprocess_function(examples):
             l.append(tokenizer(i, max_length=100, truncation=True)["input_ids"])
     model_inputs["labels"] = l
     return model_inputs
-with open('/home/ubuntu/farah/BeamQA/data/all_props.pkl', 'rb') as f:
+
+with open('../Data/Path_gen/all_props.pkl', 'rb') as f:
     prop_set = pickle.load(f)
+
 if args.mode == 'train_eval':
-    # train = pd.read_csv('../Data/QA_data/MetaQA/train_'+args.hop+'hop.txt', header=0, names=['QA', 'Ans', 'TAG'], delimiter='\t')
-    # test = pd.read_csv('../Data/QA_data/MetaQA/test_'+args.hop+'hop.txt', header=0, names=['QA', 'Ans', 'TAG'], delimiter='\t')
-    data_files = {"train": "/home/ubuntu/farah/Path_gen/train_noc.txt",
+    unseen = pd.read_csv('../Data/Path_gen/1hop-synth-t5-unseen-only-small.csv', header=0, names=['QA', 'TAG'])
+    train_ext = pd.read_csv('../Data/Path_gen/train_noc.txt', header=0, names=['QA', 'TAG'], sep='\t')
+
+
+    train_ext = train_ext.append(unseen).reset_index(drop=True)
+    print(len(train_ext))
+    train_ext.to_csv('../Data/Path_gen/train_extended.txt', sep='\t')
+
+    data_files = {"train": "../Data/Path_gen/train_extended.txt",
                   "test": "/home/ubuntu/farah/Path_gen/test_noc.txt"}
 
     train_loader = load_dataset("csv", data_files=data_files, names=['text', 'tag'], delimiter='\t', header=0)
     tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
+
 
 
     print('tokenizer before ',len(tokenizer))
@@ -89,7 +98,7 @@ if args.mode == 'train_eval':
     )
     trainer.train()
 
-    data_test = pd.read_csv('/storage/nlp_chainpred/Bart/test_gt.txt', names=['text', 'no', 'tag'],
+    data_test = pd.read_csv('../Data/QA_data/WQSP/test_wqsp.txt', names=['text', 'no', 'tag'],
                             delimiter='\t')
     ## count the samples with nan targets to exclude them when computing the hits@1 and hits@3
     to_exclude = len(data_test[data_test['tag'].isnull()])
@@ -103,8 +112,8 @@ if args.mode == 'train_eval':
     print('LEN TEST ', len(data_test))
     data_test["tag"] = data_test.tag.apply(lambda w: ' '.join(w))
     run_evaluation(model, data_test,tokenizer,to_exclude,args.hops)
-if args.mode =='eval':
 
+if args.mode =='eval':
     model = BartForConditionalGeneration.from_pretrained(args.model)
     tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
     model.resize_token_embeddings(len(tokenizer))
