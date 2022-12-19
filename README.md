@@ -19,7 +19,7 @@ pip install -e .
 ## Data 
 
 We use two datasets MetaQA and WebQuestionSP
-The Data folder can be downloaded from https://drive.google.com/file/d/1FK0tIZauEYtkoZ0ET3qYIg2De_DHaQz9/view?usp=sharing.  
+The Data folder can be downloaded from [this link](https://drive.google.com/file/d/1oEDSK2e1R67L1fee4YhxGnrwkArSe162/view?usp=sharing).*  
 
 #### Graph emeddings 
 We generate graph embeddings using Libkge, the graphs and config files are provided. Further instructions on how to train embeddings can be found in LibkGE repository https://github.com/uma-pi1/kge
