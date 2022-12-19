@@ -78,7 +78,7 @@ def preprocess_sentence(w):
     w =w.replace('\\','')
     return w
 
-def run_evaluation(model,data_test,tokenizer,to_exclude,hops):
+def run_evaluation(model,data_test,tokenizer,to_exclude,hops,dataset):
     results = []
     hits3 = 0
     hits1 = 0
@@ -94,7 +94,11 @@ def run_evaluation(model,data_test,tokenizer,to_exclude,hops):
         print(" HITS 3 ", hits3 / (i + 1), "HITS 1 ", hits1 / (i + 1))
 
     result_data = pd.DataFrame(results, columns=['QA', 'Rel', 'Scores', 'Hopscores'])
-    result_data.to_csv('../Data/Path_gen/predictions_metaqa_'+hops+'.txt', sep='\t')
+    print('File saved into ../Data/Path_gen/output/predictions_',dataset,'....')
+    if dataset =='metaqa' :
+        result_data.to_csv('../Data/Path_gen/outputs/predictions_metaqa_'+hops+'hop_wscores.txt', sep='\t')
+    else:
+        result_data.to_csv('../Data/Path_gen/outputs/wqsp_predictions_wscores.txt', sep='\t')
 
     print('Total hits ', hits3)
     print('Hits@3 ', hits3 / (len(data_test) - to_exclude), 'Hits@1',hits1/ (len(data_test) - to_exclude))

@@ -30,6 +30,8 @@ parser.add_argument('--num_workers', type=int, default=15)
 parser.add_argument('--hop', type=str, default='1')
 parser.add_argument('--mode', type=str, default='train_eval')
 parser.add_argument('--gpu', type=int, default=0)
+parser.add_argument('--dataset', type=str, default='metaqa')
+
 args = parser.parse_args()
 
 
@@ -49,12 +51,9 @@ def preprocess_function(examples):
     return model_inputs
 
 if args.mode == 'train_eval':
-    # train = pd.read_csv('../Data/QA_data/MetaQA/train_'+args.hop+'hop.txt', header=0, names=['QA', 'Ans', 'TAG'], delimiter='\t')
-    # test = pd.read_csv('../Data/QA_data/MetaQA/test_'+args.hop+'hop.txt', header=0, names=['QA', 'Ans', 'TAG'], delimiter='\t')
-    train = pd.read_csv('/storage/Embedkg/data/QA_data/MetaQA/train_' + args.hop + 'hop.txt', header=0, names=['QA', 'Ans', 'TAG'],
-                    delimiter='\t')
-    test = pd.read_csv('/storage/Embedkg/data/QA_data/MetaQA/test_' + args.hop + 'hop.txt', header=0, names=['QA', 'Ans', 'TAG'],
-                   delimiter='\t')
+    train = pd.read_csv('../Data/QA_data/MetaQA/train_'+args.hop+'hop.txt', header=0, names=['QA', 'Ans', 'TAG'], delimiter='\t')
+    test = pd.read_csv('../Data/QA_data/MetaQA/test_'+args.hop+'hop.txt', header=0, names=['QA', 'Ans', 'TAG'], delimiter='\t')
+
     prop_set = get_set_relations(train, hop=2)
     print(len(prop_set), len(train))
 
@@ -110,10 +109,10 @@ if args.mode == 'train_eval':
     # replace samples that don't have a path with unknown
     data_test.loc[data_test['tag'].isnull(), 'tag'] = 'unknown'
     data_test['text'] = data_test['text'].apply(lambda w: preprocess_sentence(w))
-    paths , scores, hop_scores = run_evaluation(model, data_test,tokenizer,to_exclude,args.hops)
+    paths , scores, hop_scores = run_evaluation(model, data_test,tokenizer,to_exclude,args.hops,args.dataset)
 
 if args.mode =='eval':
-    train = pd.read_csv('/storage/Embedkg/data/QA_data/MetaQA/train_' + args.hop + 'hop.txt', header=0,
+    train = pd.read_csv('../Data/QA_data/MetaQA/train_' + args.hop + 'hop.txt', header=0,
                         names=['QA', 'Ans', 'TAG'],
                         delimiter='\t')
 
@@ -126,7 +125,7 @@ if args.mode =='eval':
     to_exclude = len(data_test[data_test['tag'].isnull()])
     data_test.loc[data_test['tag'].isnull(), 'tag'] = 'unknown'
     data_test['text'] = data_test['text'].apply(lambda w: preprocess_sentence(w))
-    paths , scores, hop_scores = run_evaluation(model, data_test,tokenizer,to_exclude,args.hops)
+    paths , scores, hop_scores = run_evaluation(model, data_test,tokenizer,to_exclude,args.hops,args.dataset)
 
 
 

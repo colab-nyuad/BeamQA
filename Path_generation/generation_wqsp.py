@@ -22,7 +22,7 @@ import pickle
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--hops', type=str, default='1')
-parser.add_argument('--epochs', type=int, default=2)
+parser.add_argument('--epochs', type=int, default=100)
 parser.add_argument('--model', type=str, default='facebook/bart-base')
 parser.add_argument('--batch_size', type=int, default=128)
 parser.add_argument('--shuffle_data', type=bool, default=True)
@@ -30,6 +30,8 @@ parser.add_argument('--num_workers', type=int, default=15)
 parser.add_argument('--decay', type=float, default= 0.01)
 parser.add_argument('--mode', type=str, default='train_eval')
 parser.add_argument('--gpu', type=int, default=0)
+parser.add_argument('--dataset', type=str, default='wqsp')
+
 args = parser.parse_args()
 
 def preprocess_function(examples):
@@ -46,16 +48,16 @@ with open('../Data/Path_gen/all_props.pkl', 'rb') as f:
     prop_set = pickle.load(f)
 
 if args.mode == 'train_eval':
+    ## the file ../Data/Path_gen/1hop-synth-t5-unseen-only-small.csv  can be generated  from t5_generated_wqsp.ipynb for more accurate results use the provided file due to randomness
     unseen = pd.read_csv('../Data/Path_gen/1hop-synth-t5-unseen-only-small.csv', header=0, names=['QA', 'TAG'])
     train_ext = pd.read_csv('../Data/Path_gen/train_noc.txt', header=0, names=['QA', 'TAG'], sep='\t')
-
 
     train_ext = train_ext.append(unseen).reset_index(drop=True)
     print(len(train_ext))
     train_ext.to_csv('../Data/Path_gen/train_extended.txt', sep='\t')
 
     data_files = {"train": "../Data/Path_gen/train_extended.txt",
-                  "test": "/home/ubuntu/farah/Path_gen/test_noc.txt"}
+                  "test": "../Data/Path_gen/test_noc.txt"}
 
     train_loader = load_dataset("csv", data_files=data_files, names=['text', 'tag'], delimiter='\t', header=0)
     tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
@@ -111,18 +113,18 @@ if args.mode == 'train_eval':
     data_test["tag"] = data_test.tag.apply(lambda w: w.split(' '))
     print('LEN TEST ', len(data_test))
     data_test["tag"] = data_test.tag.apply(lambda w: ' '.join(w))
-    run_evaluation(model, data_test,tokenizer,to_exclude,args.hops)
+    run_evaluation(model, data_test,tokenizer,to_exclude,args.hops,args.dataset)
 
 if args.mode =='eval':
     model = BartForConditionalGeneration.from_pretrained(args.model)
     tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
     model.resize_token_embeddings(len(tokenizer))
 
-    data_test = pd.read_csv('../Data/Path_gen/test_bart_metaqa_'+args.hop+'hop.csv')
+    data_test = pd.read_csv('../Data/QA_data/WQSP/test_wqsp.txt')
     to_exclude = len(data_test[data_test['tag'].isnull()])
     data_test.loc[data_test['tag'].isnull(), 'tag'] = 'unknown'
     data_test['text'] = data_test['text'].apply(lambda w: preprocess_sentence(w))
-    paths , scores, hop_scores = run_evaluation(model, data_test,tokenizer,to_exclude,args.hops)
+    paths , scores, hop_scores = run_evaluation(model, data_test,tokenizer,to_exclude,args.hops,args.dataset)
 
 
 
