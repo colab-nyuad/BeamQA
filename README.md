@@ -15,6 +15,7 @@ pip install requirements.txt
 git clone https://github.com/uma-pi1/kge.git
 cd kge
 pip install -e .
+```
 
 ## Data 
 
