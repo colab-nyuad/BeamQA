@@ -4,6 +4,18 @@ Implementation of "Question Answering over Incomplete Knowledge Graphs using Pat
 
 
 # Instructions 
+### Quick start
+```sh
+# retrieve and install project 
+git clone https://github.com/colab-nyuad/BeamQA
+
+# install requirements
+```sh
+pip install requirements.txt
+git clone https://github.com/uma-pi1/kge.git
+cd kge
+pip install -e .
+```
 
 ## Data 
 
