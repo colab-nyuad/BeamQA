@@ -39,24 +39,6 @@ def process_text_file(text_file, split=False):
         data_array.append([head, ans, path])
     return data_array
 
-def data_generator(data, word2ix, entity2idx, rel2idx):
-    for i in range(len(data)):
-        data_sample = data[i]
-        head = entity2idx[data_sample[0].strip()]
-        ques = data_sample[1].strip()
-        question = ques.split(' ')
-        encoded_question = [word2ix[word.strip()] for word in question]
-        if len(data_sample) == 4:
-            path = [rel2idx[rel_name.strip()] for rel_name in data_sample[3]]
-        else:
-            path = None
-        if type(data_sample[2]) is str:
-            ans = entity2idx[data_sample[2]]
-        else:
-            ans = [entity2idx[entity.strip()] for entity in list(data_sample[2])]
-
-        yield torch.tensor(head, dtype=torch.long), torch.tensor(encoded_question, dtype=torch.long), ans, torch.tensor(
-            len(encoded_question), dtype=torch.long), data_sample[1], path , ques
 
 
 def load_graph(path):

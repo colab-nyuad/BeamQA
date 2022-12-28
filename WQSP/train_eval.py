@@ -6,7 +6,7 @@ import torch
 import ast
 
 def data_generator(data,beam_data, entity2idx):
-    df2 = pd.read_csv(beam_data,index_col=0,delimiter='\t',header=0,names=['qa','rel','scores','hopscores'])
+    df2 = pd.read_csv(beam_data,index_col=0,delimiter='\t',header=0,names=['qa','rel','scores','hopscores']) #paths generated using Path_generation module
     df2 = df2.values
     for i in range(len(data)):
         data_sample = data[i]
@@ -18,8 +18,8 @@ def data_generator(data,beam_data, entity2idx):
             ans = data_sample[1].split('|')
         else : ans = 'nan'
         scores = ast.literal_eval(df2[i][2])
-        scores = [float(a) for a in scores]
-        relations = df2[i][1].split('|')
+        scores = [float(a) for a in scores] #path score
+        relations = df2[i][1].split('|') # paths generated
         yield torch.tensor(head, dtype=torch.long), ans, relations , scores
 
 def evaluate_beamQA(data_path,beam_data, device, model, entity2idx, rel2idx,hops,nx_graph_path,topk):
@@ -63,7 +63,7 @@ def train(model,data_loader,loss_func,loss_weights,optimizer,scheduler,batch_siz
     for i_batch, a in enumerate(loader):
         model.zero_grad()
         positive_head = a[0].to(device)
-        target = a[1].to(device)  # positive tail
+        target = a[1].to(device)
         relations = a[2].to(device)
         pred1, pred2 = model(positive_head, relations)
         a,b = loss_weights[0],loss_weights[1]

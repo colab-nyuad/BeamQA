@@ -32,10 +32,9 @@ class Model(nn.Module):
             R = self.new_operation(R, relations[:, 2, :])
 
         pred = self.ComplEx(head, R)
-
         for r in range(relations.shape[1]):
             rp1 = relations[:, r, :]
-            pred2 = self.ComplEx2(head, rp1)
+            pred2 = self.ComplEx(head, rp1)
             new_head = pred2.argmax(dim=1)
             head = self.encoder_head(new_head)
         return pred, pred2
@@ -88,33 +87,6 @@ class Model(nn.Module):
         re_score = score[0]
         im_score = score[1]
         score = torch.mm(re_score, re_tail.transpose(1, 0)) + torch.mm(im_score, im_tail.transpose(1, 0))
-        # pred = torch.sigmoid(score)
         return score
 
-    def ComplEx2(self, head, relation):
-        head = torch.stack(list(torch.chunk(head, 2, dim=1)), dim=1)
-        if self.do_batchnorm :
-            head = self.bn0(head)
-        if self.do_dropout :
-            head = self.dropout(head)
-            relation = self.dropout(relation)
-        head = head.permute(1, 0, 2)
-        re_head = head[0]
-        im_head = head[1]
 
-        re_relation, im_relation = torch.chunk(relation, 2, dim=1)
-        re_tail, im_tail = torch.chunk(self.encoder_head.weight, 2, dim=1)
-
-        re_score = re_head * re_relation - im_head * im_relation
-        im_score = re_head * im_relation + im_head * re_relation
-
-        score = torch.stack([re_score, im_score], dim=1)
-        if self.do_batchnorm :
-            score = self.bn2(score)
-        if self.do_dropout : score = self.dropout(score)
-        score = score.permute(1, 0, 2)
-
-        re_score = score[0]
-        im_score = score[1]
-        score = torch.mm(re_score, re_tail.transpose(1, 0)) + torch.mm(im_score, im_tail.transpose(1, 0))
-        return score

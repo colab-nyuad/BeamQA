@@ -24,7 +24,7 @@ parser.add_argument('--num_workers', type=int, default=15)
 parser.add_argument('--lr', type=float, default=0.005)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--embedding_dim', type=int, default=256)
-parser.add_argument('--topk', type=int, default=10)
+parser.add_argument('--topk', type=int, default=20)
 args = parser.parse_args()
 
 device = 'cuda:'+str(args.gpu)
