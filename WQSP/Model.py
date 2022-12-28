@@ -61,6 +61,7 @@ class Model(nn.Module):
         top2 = torch.topk(preds, k=2, largest=True, sorted=True)
         return top2, None
 
+    # inspired by https://github.com/malllabiisc/EmbedKGQA
     def ComplEx(self, head, relation):
         head = torch.stack(list(torch.chunk(head, 2, dim=1)), dim=1)
         if self.do_batchnorm :

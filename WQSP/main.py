@@ -51,6 +51,7 @@ elif args.mode =='train-BeamQA':
     train_data = Datasetwqsp(train_data, entity2idx, rel2idx)
     data_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=args.shuffle_data, num_workers=args.num_workers)
 
+    # taken from https://github.com/malllabiisc/EmbedKGQA
     klloss = torch.nn.KLDivLoss(reduction='sum')
     def loss_func(scores, targets):
         return klloss(
