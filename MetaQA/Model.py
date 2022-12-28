@@ -13,7 +13,6 @@ class Model(nn.Module):
         self.dropout = torch.nn.Dropout(dropout_val)
         self.batchnorm1 = nn.BatchNorm1d(2048)
 
-        self.dropout_rel = torch.nn.Dropout(dropout_val)
         self.do_batchnorm = do_batchnorm
         self.do_dropout = do_dropout
 

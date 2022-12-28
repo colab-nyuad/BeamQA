@@ -6,22 +6,22 @@ import torch
 import ast
 
 def data_generator(data, entity2idx, rel2idx,hops):
-    df2 = pd.read_csv('/home/ubuntu/farah/BeamQA/data/predictions_metaqa_'+hops+'hop_wscores.txt',index_col=0,delimiter='\t')
+    df2 = pd.read_csv('../Data/Path_gen/outputs/predictions_metaqa_'+hops+'hop_wscores.txt',index_col=0,delimiter='\t') ## the path generated using path_generation module
     df2 = df2.values
     for i in range(len(data)):
         data_sample = data[i]
-        head = entity2idx[data_sample[0].strip()]
+        head = entity2idx[data_sample[0].strip()] #extract head id
 
-        path = [rel2idx[rel_name.strip()] if  rel_name in rel2idx else 0 for rel_name in data_sample[2] ]
+        path = [rel2idx[rel_name.strip()] if  rel_name in rel2idx else 0 for rel_name in data_sample[2] ] # extract relation id
 
         if type(data_sample[1]) is str:
             ans = entity2idx[data_sample[1]]
         else:
             ans = [entity2idx[entity.strip()] for entity in list(data_sample[1])]
 
-        scores = ast.literal_eval(df2[i][2])
+        scores = ast.literal_eval(df2[i][2]) #path scores
         scores = [float(a) for a in scores]
-        beam_paths = df2[i][1].split('|')
+        beam_paths = df2[i][1].split('|')  #paths generated
         yield torch.tensor(head, dtype=torch.long), ans,path , beam_paths,scores
 
 
@@ -33,7 +33,6 @@ def evaluate_beamQA(data_path, device, model, entity2idx, rel2idx,hops,nx_graph_
     idx2entity = {v:k for k,v in entity2idx.items()}
     num_hops = int(hops.split('hop')[0])
     print('Hops ',num_hops)
-    # load the graph
     nx_graph = load_graph(nx_graph_path)
 
     loader = tqdm(range(len(data)))
@@ -61,15 +60,13 @@ def train(model,data_loader,loss_func,loss_weights,optimizer,scheduler,batch_siz
     loader = tqdm(data_loader, total=len(data_loader), unit="batches")
     running_loss = 0
     for i_batch, a in enumerate(loader):
-        # if i_batch == 0 : break
         model.zero_grad()
         positive_head = a[0].to(device)
-        target = a[1].to(device)  # positive tail
+        target = a[1].to(device)
         relations = a[2].to(device)
         pred1, pred2 = model(positive_head, relations)
         a,b = loss_weights[0],loss_weights[1]
-        loss = a * loss_func(pred1, target) + b * loss_func(pred2, target)
-        # if i_batch == 0: print(loss_func(pred1, target), loss_func(pred2, target))
+        loss =  a * loss_func(pred1, target)  + b * loss_func(pred2, target)
         loss.backward()
         optimizer.step()
         running_loss += loss.item()

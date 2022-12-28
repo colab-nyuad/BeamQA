@@ -1,6 +1,6 @@
 import torch
 
-def check(head, rel,model,rel2idx,entity2idx,idx2entity,nx_graph,device,topk = 50 ,retscore = False):
+def check(head, rel,model,rel2idx,entity2idx,idx2entity,nx_graph,device,topk = 20 ,retscore = False):
     '''
     Computes the scores between head entity and relation
     :param head: head entity
@@ -22,7 +22,8 @@ def check(head, rel,model,rel2idx,entity2idx,idx2entity,nx_graph,device,topk = 5
     s = torch.Tensor([s_id]).long().to(device)            # subject indexes
     p = torch.Tensor([rel_id]).long().to(device)          # relation indexes
     scores = model.another_forward(s, p)        # scores of all objects for (s,p,?)
-    scores = torch.softmax(scores ,dim=1)
+    # scores = torch.softmax(scores ,dim=1) #No need for softmax since ComplEx already has sigmoid
+
     # edgeidx contains a list of candidates indexes that have an edge with the head entity
     edgeidx = torch.tensor([entity2idx[i[1]]
                             for i in nx_graph.out_edges(head, data='data')
