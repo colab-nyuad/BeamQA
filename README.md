@@ -41,7 +41,7 @@ bash train.sh
 cd BeamQA/WQSP
 python main.py --gpu [number] --hops [num_hops] --kg_type [kg_type] --mode train-BeamQA
 ```
-Or comment the first two lines and run 
+Or uncomment lines for WQSP
 ```sh
 bash train.sh
 ```
